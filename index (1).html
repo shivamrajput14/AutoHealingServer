@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Auto-Heal Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #080b12;
+      --surface: #0e1420;
+      --surface2: #141b2d;
+      --border: rgba(94, 3, 3, 0.08);
+      --border-glow: rgba(255, 99, 120, 0.2);
+      --accent: #9c0964;
+      --accent2: #60a5fa;
+      --green: #22c55e;
+      --red: #ef4444;
+      --amber: #f59e0b;
+      --text: #e2eaff;
+      --muted: #6b7fa3;
+      --dim: #2a3550;
+      --font-display: 'Syne', sans-serif;
+      --font-body: 'DM Sans', sans-serif;
+      --font-mono: 'DM Mono', monospace;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      padding: 2rem 1rem;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: -30%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 900px;
+      height: 500px;
+      background: radial-gradient(ellipse, rgba(59,130,246,0.08) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(59,130,246,0.1);
+      border: 1px solid rgba(59,130,246,0.25);
+      border-radius: 99px;
+      padding: 5px 14px;
+      font-size: 12px;
+      color: var(--accent2);
+      margin-bottom: 1.25rem;
+      font-weight: 500;
+    }
+
+    .pulse {
+      width: 7px;
+      height: 7px;
+      background: var(--green);
+      border-radius: 50%;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    h1 {
+      font-family: var(--font-display);
+      font-size: clamp(28px, 5vw, 42px);
+      font-weight: 700;
+      letter-spacing: -1px;
+      margin-bottom: 0.75rem;
+      line-height: 1.1;
+    }
+
+    h1 span { color: var(--accent2); }
+
+    .header-sub {
+      font-size: 15px;
+      color: var(--muted);
+      max-width: 500px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    /* Status card */
+    .status-card {
+      background: var(--surface);
+      border: 1px solid var(--border-glow);
+      border-radius: 20px;
+      padding: 1.75rem;
+      margin-bottom: 1.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .status-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(59,130,246,0.4), transparent);
+    }
+
+    .status-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+      flex-wrap: gap;
+      gap: 1rem;
+    }
+
+    .status-title {
+      font-family: var(--font-display);
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 99px;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.4s ease;
+    }
+
+    .status-indicator.online {
+      background: rgba(34,197,94,0.1);
+      border: 1px solid rgba(34,197,94,0.25);
+      color: var(--green);
+    }
+
+    .status-indicator.offline {
+      background: rgba(239,68,68,0.1);
+      border: 1px solid rgba(239,68,68,0.25);
+      color: var(--red);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .status-indicator.online .status-dot { animation: pulse 1.5s infinite; }
+
+    /* Metrics grid */
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+    }
+
+    .metric {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem;
+    }
+
+    .metric-label {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+
+    .metric-value {
+      font-family: var(--font-mono);
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--accent2);
+      word-break: break-all;
+    }
+
+    /* Architecture section */
+    .arch-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 1.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .section-title {
+      font-family: var(--font-display);
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .flow {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .flow-step {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .flow-box {
+      background: var(--surface2);
+      border: 1px solid var(--border-glow);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 12px;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .flow-box.highlight {
+      border-color: rgba(59,130,246,0.4);
+      background: rgba(59,130,246,0.08);
+      color: var(--accent2);
+    }
+
+    .flow-arrow {
+      color: var(--muted);
+      font-size: 16px;
+      padding: 0 2px;
+    }
+
+    /* Log section */
+    .log-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 1.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .log-box {
+      background: #050810;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem;
+      height: 160px;
+      overflow-y: auto;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      line-height: 1.8;
+    }
+
+    .log-line { display: flex; gap: 10px; }
+    .log-time { color: var(--dim); flex-shrink: 0; }
+    .log-line.info .log-msg { color: var(--accent2); }
+    .log-line.success .log-msg { color: var(--green); }
+    .log-line.error .log-msg { color: var(--red); }
+    .log-line.warn .log-msg { color: var(--amber); }
+
+    /* Crash button */
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 1.5rem;
+    }
+
+    .btn {
+      padding: 14px;
+      border-radius: 12px;
+      border: none;
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn:active { transform: scale(0.97); }
+
+    .btn-refresh {
+      background: rgba(59,130,246,0.12);
+      border: 1px solid rgba(59,130,246,0.3);
+      color: var(--accent2);
+    }
+
+    .btn-refresh:hover { background: rgba(59,130,246,0.2); }
+
+    .btn-crash {
+      background: rgba(239,68,68,0.1);
+      border: 1px solid rgba(239,68,68,0.3);
+      color: var(--red);
+    }
+
+    .btn-crash:hover { background: rgba(239,68,68,0.18); }
+    .btn-crash:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      font-size: 12px;
+      color: var(--dim);
+      margin-top: 2rem;
+    }
+
+    .uptime-bar-wrap {
+      margin-top: 1.25rem;
+    }
+
+    .uptime-bar-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .uptime-track {
+      height: 5px;
+      background: var(--surface2);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .uptime-fill {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 99px;
+      transition: width 1s ease;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="badge">
+      <div class="pulse"></div>
+      AWS Auto-Healing Demo
+    </div>
+    <h1>System <span>Auto-Heal</span> Monitor</h1>
+    <p class="header-sub">This server is monitored by CloudWatch. If it crashes, Lambda automatically restarts it and SNS sends an alert.</p>
+  </div>
+
+  <!-- Status Card -->
+  <div class="status-card">
+    <div class="status-header">
+      <div class="status-title">Server Status</div>
+      <div class="status-indicator online" id="statusIndicator">
+        <div class="status-dot"></div>
+        <span id="statusText">Online</span>
+      </div>
+    </div>
+    <div class="metrics" id="metrics">
+      <div class="metric">
+        <div class="metric-label">Uptime</div>
+        <div class="metric-value" id="uptime">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Memory Used</div>
+        <div class="metric-value" id="memory">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Hostname</div>
+        <div class="metric-value" id="hostname">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Node Version</div>
+        <div class="metric-value" id="nodeVersion">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Platform</div>
+        <div class="metric-value" id="platform">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Process ID</div>
+        <div class="metric-value" id="pid">—</div>
+      </div>
+    </div>
+    <div class="uptime-bar-wrap">
+      <div class="uptime-bar-label">
+        <span>Availability</span>
+        <span id="availText">100%</span>
+      </div>
+      <div class="uptime-track"><div class="uptime-fill" id="uptimeFill"></div></div>
+    </div>
+  </div>
+
+  <!-- Architecture Flow -->
+  <div class="arch-card">
+    <div class="section-title">Auto-Heal Architecture</div>
+    <div class="flow">
+      <div class="flow-step">
+        <div class="flow-box highlight">EC2 + Node.js</div>
+        <div class="flow-arrow">→</div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-box">CloudWatch Alarm</div>
+        <div class="flow-arrow">→</div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-box highlight">Lambda (Restart)</div>
+        <div class="flow-arrow">→</div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-box">SNS Email Alert</div>
+        <div class="flow-arrow">→</div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-box highlight">Server Healed ✓</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="actions">
+    <button class="btn btn-refresh" onclick="fetchStatus()">
+      ↻ Refresh Status
+    </button>
+    <button class="btn btn-crash" id="crashBtn" onclick="crashServer()">
+      ⚡ Simulate Crash
+    </button>
+  </div>
+
+  <!-- Live Log -->
+  <div class="log-card">
+    <div class="section-title">Live Log</div>
+    <div class="log-box" id="logBox"></div>
+  </div>
+
+  <div class="footer">Auto-Heal Demo · Powered by AWS Lambda + CloudWatch + SNS</div>
+</div>
+
+<script>
+  let checks = 0, successes = 0;
+
+  function ts() {
+    return new Date().toLocaleTimeString();
+  }
+
+  function log(msg, type = "info") {
+    const box = document.getElementById("logBox");
+    const line = document.createElement("div");
+    line.className = `log-line ${type}`;
+    line.innerHTML = `<span class="log-time">${ts()}</span><span class="log-msg">${msg}</span>`;
+    box.appendChild(line);
+    box.scrollTop = box.scrollHeight;
+  }
+
+  async function fetchStatus() {
+    checks++;
+    try {
+      const res = await fetch("/api/status");
+      const d = await res.json();
+      successes++;
+
+      document.getElementById("uptime").textContent = formatUptime(parseFloat(d.uptime));
+      document.getElementById("memory").textContent = d.memory.used + " / " + d.memory.total;
+      document.getElementById("hostname").textContent = d.hostname;
+      document.getElementById("nodeVersion").textContent = d.nodeVersion;
+      document.getElementById("platform").textContent = d.platform;
+      document.getElementById("pid").textContent = d.pid;
+
+      const indicator = document.getElementById("statusIndicator");
+      indicator.className = "status-indicator online";
+      document.getElementById("statusText").textContent = "Online";
+
+      const avail = Math.round((successes / checks) * 100);
+      document.getElementById("availText").textContent = avail + "%";
+      document.getElementById("uptimeFill").style.width = avail + "%";
+
+      log(`Health check passed — uptime ${formatUptime(parseFloat(d.uptime))}`, "success");
+    } catch (e) {
+      const indicator = document.getElementById("statusIndicator");
+      indicator.className = "status-indicator offline";
+      document.getElementById("statusText").textContent = "Offline";
+      document.getElementById("uptimeFill").style.width = "0%";
+      log("Server unreachable — CloudWatch alarm triggered!", "error");
+      log("Lambda restarting EC2 instance...", "warn");
+    }
+  }
+
+  async function crashServer() {
+    const btn = document.getElementById("crashBtn");
+    btn.disabled = true;
+    btn.textContent = "Crashing...";
+    log("Sending crash signal to server...", "warn");
+    try {
+      await fetch("/api/crash", { method: "POST" });
+      log("Server process terminated — waiting for auto-heal...", "error");
+      setTimeout(() => {
+        log("CloudWatch detected downtime — triggering Lambda...", "warn");
+      }, 2000);
+      setTimeout(() => {
+        btn.disabled = false;
+        btn.textContent = "⚡ Simulate Crash";
+      }, 10000);
+    } catch (e) {
+      log("Server crashed — monitoring for recovery...", "error");
+      btn.disabled = false;
+      btn.textContent = "⚡ Simulate Crash";
+    }
+  }
+
+  function formatUptime(seconds) {
+    if (seconds < 60) return seconds.toFixed(0) + "s";
+    if (seconds < 3600) return (seconds / 60).toFixed(1) + "m";
+    return (seconds / 3600).toFixed(2) + "h";
+  }
+
+  log("Dashboard initialized", "info");
+  log("Connecting to server...", "info");
+  fetchStatus();
+  setInterval(fetchStatus, 10000);
+</script>
+</body>
+</html>
