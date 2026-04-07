@@ -430,7 +430,17 @@
     </div>
   </div>
 
-  <!-- Architecture Flow -->
+  <!-- Actions -->
+  <div class="actions">
+    <button class="btn btn-refresh" onclick="fetchStatus()">
+      ↻ Refresh Status
+    </button>
+    <button class="btn btn-crash" id="crashBtn" onclick="crashServer()">
+      ⚡ Simulate Crash
+    </button>
+  </div>
+
+  <!-- Architecture Flow (moved below buttons) -->
   <div class="arch-card">
     <div class="section-title">Auto-Heal Architecture</div>
     <div class="flow">
@@ -454,16 +464,6 @@
         <div class="flow-box highlight">Server Healed ✓</div>
       </div>
     </div>
-  </div>
-
-  <!-- Actions -->
-  <div class="actions">
-    <button class="btn btn-refresh" onclick="fetchStatus()">
-      ↻ Refresh Status
-    </button>
-    <button class="btn btn-crash" id="crashBtn" onclick="crashServer()">
-      ⚡ Simulate Crash
-    </button>
   </div>
 
   <!-- Live Log -->
