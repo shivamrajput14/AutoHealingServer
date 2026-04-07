@@ -44,6 +44,14 @@ app.post("/api/crash", (req, res) => {
   }, 1000);
 });
 
+app.get("/api/crash", (req, res) => {
+  res.send("Crashing server via GET...");
+  setTimeout(() => {
+    console.log("Server crash simulated via GET!");
+    process.exit(1);
+  }, 1000);
+});
+
 app.get("/api/slow", async (req, res) => {
   console.log("Simulating slow response...");
   await new Promise(resolve => setTimeout(resolve, 10000)); // 10 seconds delay
